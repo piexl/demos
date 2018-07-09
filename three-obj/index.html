@@ -14,74 +14,95 @@
 <body>
 
 <script>
-var scene = new THREE.Scene();
-scene.background = new THREE.Color(0x3b3b3b);
-var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-var renderer = new THREE.WebGLRenderer();
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+var Game = function(){
+    var game = this;
 
-camera.position.z = 32;
+    //灯光
+    game.LightInit = function(){
 
-var manager = new THREE.LoadingManager();
-//模型需要纹理Texture
-var texture = new THREE.Texture();
-var loader = new THREE.ImageLoader(manager);
-loader.load('obj/tietu.jpg', function (image) {
-    texture.image = image;
-    texture.needsUpdate = true;
-});
+        var lightTop = new THREE.DirectionalLight(0xffffff, 0.7);//光源颜色
+        lightTop.position.set(0, 200, 200);//光源位置
+        game.scene.add(lightTop);//光源添加到场景中
 
-//obj加载的类如图：
-var mesh = null;
-var loader = new THREE.OBJLoader(manager);//在init函数中，创建loader变量，用于导入模型
-loader.load('obj/mty.obj', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
-    obj.traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-            child.material.side = THREE.DoubleSide;
-            child.material.map = texture;
-        }
-    });
-    mesh = obj;//储存到全局变量中
-    mesh.position.y = -10;
-    scene.add(mesh);//将导入的模型添加到场景中
-});
+        var lightBottom = new THREE.DirectionalLight(0xffffff, 0.3);//光源颜色
+        lightBottom.position.set(0, -200, 200);//光源位置
+        game.scene.add(lightBottom);//光源添加到场景中
 
+        var lightLeft = new THREE.DirectionalLight(0xffffff, 0.3);//光源颜色
+        lightLeft.position.set(200, 0, 200);//光源位置
+        game.scene.add(lightLeft);//光源添加到场景中
 
-var lightTop = new THREE.DirectionalLight(0xffffff,0.7);//光源颜色
-lightTop.position.set(0, 200, 200);//光源位置
-scene.add(lightTop);//光源添加到场景中
+        var lightRight = new THREE.DirectionalLight(0xffffff, 0.3);//光源颜色
+        lightRight.position.set(-200, 0, 200);//光源位置
+        game.scene.add(lightRight);//光源添加到场景中
 
-var lightBottom = new THREE.DirectionalLight(0xffffff, 0.3);//光源颜色
-lightBottom.position.set(0, -200, 200);//光源位置
-scene.add(lightBottom);//光源添加到场景中
-
-var lightLeft = new THREE.DirectionalLight(0xffffff,0.3);//光源颜色
-lightLeft.position.set(200, 0, 200);//光源位置
-scene.add(lightLeft);//光源添加到场景中
-
-var lightRight = new THREE.DirectionalLight(0xffffff,0.3);//光源颜色
-lightRight.position.set(-200, 0, 200);//光源位置
-scene.add(lightRight);//光源添加到场景中
-
-var lightBack = new THREE.DirectionalLight(0xffffff,0.3);//光源颜色
-lightBack.position.set(0, 0, -200);//光源位置
-scene.add(lightBack);//光源添加到场景中
-
-
-var controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.screenSpacePanning = true;
-
-function animate() {
-    requestAnimationFrame(animate);
-    mesh.rotation.y += 0.01;//添加动画
-    if (mesh.rotation.y > Math.PI * 2) {
-        mesh.rotation.y -= Math.PI * 2;
+        var lightBack = new THREE.DirectionalLight(0xffffff, 0.3);//光源颜色
+        lightBack.position.set(0, 0, -200);//光源位置
+        game.scene.add(lightBack);//光源添加到场景中
     }
-    renderer.render(scene, camera);
+    //动画
+    game.Animate = function(){
+        requestAnimationFrame(game.Animate);
+        game.mesh.rotation.y += 0.01;//添加动画
+        if (game.mesh.rotation.y > Math.PI * 2) {
+            game.mesh.rotation.y -= Math.PI * 2;
+        }
+        game.renderer.render(game.scene, game.camera);
+    }
+    // 创建模型
+    game.CreateModel = function(){
+        var manager = new THREE.LoadingManager();
+        //模型需要纹理Texture
+        var texture = new THREE.Texture();
+        var loader = new THREE.ImageLoader(manager);
+        loader.load('obj/tietu.jpg', function (image) {
+            texture.image = image;
+            texture.needsUpdate = true;
+        });
+        //obj加载的类如图：
+        var loader = new THREE.OBJLoader(manager);//在init函数中，创建loader变量，用于导入模型
+        loader.load('obj/mty.obj', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+            obj.traverse(function (child) {
+                if (child instanceof THREE.Mesh) {
+                    child.material.side = THREE.DoubleSide;
+                    child.material.map = texture;
+                }
+            });
+            game.mesh = obj;//储存到全局变量中
+            game.mesh.position.y = -10;
+            game.scene.add(game.mesh);//将导入的模型添加到场景中
+            game.Animate();
+        });
+    }
+    //窗口变化
+    game.WindowSize = function(){
+        window.onresize = function () {
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            game.camera.aspect = w / h;
+            game.camera.updateProjectionMatrix();
+            game.renderer.setSize(w, h);
+        }
+    }
+    //初始化
+    game.init = function(){
+        game.scene = new THREE.Scene();
+        game.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        game.renderer = new THREE.WebGLRenderer();
+        game.scene.background = new THREE.Color(0x3b3b3b);
+        game.camera.position.z = 32;
+        game.renderer.setSize(window.innerWidth, window.innerHeight);
+        //控制器
+        game.controls = new THREE.OrbitControls(game.camera, game.renderer.domElement);
+        game.controls.screenSpacePanning = true;
+        document.body.appendChild(game.renderer.domElement);
+        game.LightInit();
+        game.CreateModel();
+        game.WindowSize();
+    }();
 }
-animate();
+var Game = new Game();
 
 </script>
 </body>
