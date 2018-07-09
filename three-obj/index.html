@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>three-导入obj模型</title>
+    <script src="three.js"></script>
+    <script src="OBJLoader.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script src="MTLLoader.js"></script>
+    <style>*{margin:0; padding:0;} html,body{width:100%; height:100%; overflow:hidden;}</style>
+</head>
+<body>
+
+<script>
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x3b3b3b);
+var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+var renderer = new THREE.WebGLRenderer();
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+camera.position.z = 32;
+
+var manager = new THREE.LoadingManager();
+//模型需要纹理Texture
+var texture = new THREE.Texture();
+var loader = new THREE.ImageLoader(manager);
+loader.load('obj/tietu.jpg', function (image) {
+    texture.image = image;
+    texture.needsUpdate = true;
+});
+
+//obj加载的类如图：
+var mesh = null;
+var loader = new THREE.OBJLoader(manager);//在init函数中，创建loader变量，用于导入模型
+loader.load('obj/mty.obj', function (obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+    obj.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+            child.material.side = THREE.DoubleSide;
+            child.material.map = texture;
+        }
+    });
+    mesh = obj;//储存到全局变量中
+    mesh.position.y = -10;
+    scene.add(mesh);//将导入的模型添加到场景中
+});
+
+
+var lightTop = new THREE.DirectionalLight(0xffffff,0.7);//光源颜色
+lightTop.position.set(0, 200, 200);//光源位置
+scene.add(lightTop);//光源添加到场景中
+
+var lightBottom = new THREE.DirectionalLight(0xffffff, 0.3);//光源颜色
+lightBottom.position.set(0, -200, 200);//光源位置
+scene.add(lightBottom);//光源添加到场景中
+
+var lightLeft = new THREE.DirectionalLight(0xffffff,0.3);//光源颜色
+lightLeft.position.set(200, 0, 200);//光源位置
+scene.add(lightLeft);//光源添加到场景中
+
+var lightRight = new THREE.DirectionalLight(0xffffff,0.3);//光源颜色
+lightRight.position.set(-200, 0, 200);//光源位置
+scene.add(lightRight);//光源添加到场景中
+
+var lightBack = new THREE.DirectionalLight(0xffffff,0.3);//光源颜色
+lightBack.position.set(0, 0, -200);//光源位置
+scene.add(lightBack);//光源添加到场景中
+
+
+var controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.screenSpacePanning = true;
+
+function animate() {
+    requestAnimationFrame(animate);
+    mesh.rotation.y += 0.01;//添加动画
+    if (mesh.rotation.y > Math.PI * 2) {
+        mesh.rotation.y -= Math.PI * 2;
+    }
+    renderer.render(scene, camera);
+}
+animate();
+
+</script>
+</body>
+</html>

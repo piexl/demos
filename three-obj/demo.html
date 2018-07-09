@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <script src="../build/three.js" type="text/javascript"></script>
+    <script src="../examples/js/Detector.js" type="text/javascript"></script>
+    <script src="../examples/js/loaders/OBJLoader.js" type="text/javascript"></script>
+    <style type="text/css">
+        #canvas3d {
+            margin: 0;
+            /*border:1px solid red;*/
+            width: 100%;
+            height: 600px;
+        }
+    </style>
+    <style type="text/css">
+        #progress {
+            margin: 0;
+            line-height: 40px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            background-color: #ff0000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas3d">
+        <div id="progress">
+            <p></p>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+
+
+
+        if (Detector.webgl) {
+            //alert('浏览器支持');
+            //浏览器支持，我们就做初始化工作。不然js处理半天，浏览器不支持也白搭
+
+            init();
+            animate();
+
+
+        } else {
+            alert('浏览器不支持');
+        }
+
+
+        var scene, camera, renderer;
+
+
+
+        //初始化
+        function init() {
+            var w = document.getElementById("canvas3d").clientWidth;
+            var h = document.getElementById("canvas3d").clientHeight;
+
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+            camera.position.z = 250;
+            var directionalLight = new THREE.DirectionalLight(0xffeedd);
+            directionalLight.position.set(0, 0, 1);
+            scene.add(directionalLight);
+            renderer = new THREE.WebGLRenderer();
+            //下面setSize()可以不写，画面也会显示默认指定300*150的大小，很小。所以肯定要手动设定一下大小
+
+            renderer.setSize(w, h);
+            renderer.setClearColor(0xf0f0f0);
+            //别忘记了这个要写滴...不然就真看不见画面。
+            document.getElementById('canvas3d').appendChild(renderer.domElement);
+
+
+            //开始模型导入的一些工作
+            //我们看看官方提供的OBJLoad.js脚本的构造函数
+            //构造函数的参数是一个manager，这是什么呀？看到图中他是集成自THREE.DefaultLoadingManager,
+            //
+            //然后我们去three.js里面DefaultLoadingManager看看是什么？看到了，是LoadingManager对象；
+            //
+            //里面搜了一遍，没有找到LoadingManager的类，我们再看看three.module.js
+            //在这里发现了function LoadingManager( onLoad, onProgress, onError ) {...}
+            //这个管理器有
+            //接下来我们声明一个LoadingManager
+            var manager = new THREE.LoadingManager();
+
+            //模型需要纹理Texture
+            var texture = new THREE.Texture();
+            var loader = new THREE.ImageLoader(manager);
+            loader.load('knotTex.png', function (image) {
+                texture.image = image;
+                texture.needsUpdate = true;
+            });
+            //obj加载的类如图：
+
+
+            //obj加载,构造函数的参数是LoadingManager
+            var loader = new THREE.OBJLoader(manager);
+            //加载方法有4个参数，分别是obj文件路径，加载完毕回调，加载进度回调，错误回调。
+            //我们先把几个回调写好
+            //加载完毕回调如下，加载完毕，我们做的就是把模型加载到场景中
+            var onLoad = function (object) {
+                //加载模型如何指定Texture呢？            
+                object.traverse(function (child) {
+                    if (child instanceof THREE.Mesh) {
+                        child.material.map = texture;
+                    }
+                });
+                scene.add(object);
+            }
+            //加载过程，可以显示进度值
+            var onProgress = function (xhr) {
+                if (xhr.lengthComputable) {
+                    var percentComplete = xhr.loaded / xhr.total * 100;
+                    console.log(Math.round(percentComplete, 2) + '% downloaded');
+                    document.getElementById('progress').innerText = Math.round(percentComplete, 2) + '%下载';
+                }
+            };
+            //错误回调，因为网页调试有报错，这里可以不做处理
+            var onError = function (xhr) {
+
+
+            };
+            //回调写好了，现在可以用加载的方法加载模型了。
+            loader.load('knot.obj', onLoad, onProgress, onError);
+        }
+
+        //窗口变化时，3D窗口也会动态适配
+        window.onresize = function () {
+            var w = document.getElementById("canvas3d").clientWidth;
+            var h = document.getElementById("canvas3d").clientHeight;
+
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+        // 渲染
+        function render() {
+            renderer.render(scene, camera);
+        }
+        //循环渲染
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+        }
+
+
+    </script>
+</body>
+
+</html>
